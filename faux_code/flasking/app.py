@@ -1,13 +1,27 @@
 from flask import Flask, redirect, url_for, request, render_template, Response
+from flask_socketio import SocketIO, emit
+import requests
 
 app = Flask(__name__)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 @app.route('/')
 def home():
     return render_template('index.html')
 
+@app.route('/video_feed')
+def video_feed():
+    pi_stream = requests.get('http://localhost:5001/pi_video_feed', stream=True)
+    return Response(pi_stream.iter_content(chunk_size=1024),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@socketio.on('send code')
+def send_code(code):
+    print("ho " + code)
+    requests.post('http://localhost:5001/execute_code', json={'code': code})
+
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    socketio.run(app, debug=True, port=5000)
 
 
 

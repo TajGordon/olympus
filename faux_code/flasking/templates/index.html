@@ -1,3 +1,45 @@
 <html>
-    <h1>Hello!</h1> 
+    <head>
+        <title>Pi control room</title>
+        <!-- This is needed for io() -->
+        <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
+    </head>
+    <body>
+        
+        <div>
+            <h1>Video feed from pi</h1>
+            <img src="{{ url_for('video_feed') }}" width="640" height="480">
+        </div>
+        <div>
+            <h1 id="test">Send code over</h1>
+            <textarea id="python_code" rows="10" cols="80"></textarea><br>
+            <button onclick="sendCode()">Run code on Pi</button>
+        </div>
+
+        <!-- Results! -->
+        <div>
+            <h3>Output:</h3>
+            <pre id="output"></pre>
+            <h3>Errors:</h3>
+            <pre id="error"></pre>
+        </div>
+        <script>
+            const socket = io('http://localhost:5001');
+
+            function sendCode() {
+                const code = document.getElementById('python_code').value;
+                socket.emit('send code', code);
+            }
+
+            // handling responses
+            socket.on('code_result', (data) => {
+                document.getElementById('output').textContent = data.output;
+                document.getElementById('error').textContent = data.error;
+            });
+
+            socket.on('code_error', (err) => {
+                document.getElementById('error').textContent = err;
+            });
+        </script>
+    </body>
 </html>
