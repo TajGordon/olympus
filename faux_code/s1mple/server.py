@@ -27,10 +27,13 @@ def camera_feed():
     return Response(gen_frames(),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
-@sio.on('runcode')
-def run_code(code):
-    pass
+import subprocess
 
+@sio.on('run code')
+def run_code(code):
+    print(f"Executing code: {code}")
+    result = subprocess.run(["python", "-c", code], capture_output=True, text=True, timeout=5) 
+    sio.emit('code result', {'output': result.stdout})
 
 @app.route('/')
 def home():
