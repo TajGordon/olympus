@@ -5,6 +5,8 @@ PowerfulBLDCdriver motor1;
 
 void setup() {
   Serial.begin(115200); // initialise serial
+  Wire.setSCL(9);
+  Wire.setSDA(8);
   Wire.begin(); // initialise i2c0, make sure to look up the i2c pins of your microcontroller.
   Wire.setClock(1000000); // set i2c speed to 1MHz
   motor1.begin(25, &Wire); // motor1 has i2c address 25 and is using i2c0.
@@ -14,27 +16,17 @@ void setup() {
   motor1.setIdPidConstants(1500, 200); 
   motor1.setIqPidConstants(1500, 200);
   motor1.setSpeedPidConstants(4e-2, 4e-4, 3e-2); // Constants valid for FOC and Robomaster M2006 P36 motor only, see tuning constants document for more details
-  motor1.configureOperatingModeAndSensor(15, 1); // configure calibration mode and sin/cos encoder
-  motor1.configureCommandMode(15); // configure calibration mode
-  motor1.setCalibrationOptions(300, 2097152, 50000, 500000); // set calibration voltage to 300/3399*vcc volts, speed to 2097152/65536 elecangle/s, settling time to 50000/50000 seconds, calibration time to 500000/50000 seconds
-  motor1.startCalibration(); // start the calibration
-  while (motor1.isCalibrationFinished() == false) { // wait for the calibration to finish, do call any other motor driver functions while calibration is ongoing
-    Serial.print(".");
-    delay(500);
-  }
-  Serial.println(); // print out the calibration results
-  Serial.print("ELECANGLEOFFSET:");
-  Serial.println(motor1.getCalibrationELECANGLEOFFSET()); 
-  Serial.print("SINCOSCENTRE:");
-  Serial.println(motor1.getCalibrationSINCOSCENTRE());
-
+  motor1.setELECANGLEOFFSET(1160405248); // set the ELECANGLEOFFSET calibration value. Each motor needs its own calibration value.
+  motor1.setSINCOSCENTRE(1251); // set the SINCOSCENTRE calibration value. Each motor needs its own calibration value.
   motor1.configureOperatingModeAndSensor(3, 1); // configure FOC mode and sin/cos encoder
   motor1.configureCommandMode(12); // configure speed command mode
   delay(500);
 }
 
 void loop() {
-  motor1.setSpeed(5000000); // set the motor speed to 5000000/2^16 elec rev/s
+  // when using Robomaster M2006 P36 motor max speed (no load) is 100000000 @ 12V and 130000000 @ 16V
+  // for Robomaster M2006 P36 motor, there are 7 pole pairs and 36:1 gearbox. So for 1 output revolution there will be 7*36=252 electrical revolutions
+  motor1.setSpeed(25000000); // set the motor speed to 25000000/2^16 elec rev/s
   delay(2000);
 
   motor1.updateQuickDataReadout(); // update quick data readout
@@ -47,7 +39,7 @@ void loop() {
   Serial.print(" err2:");
   Serial.println(motor1.getERROR2QDR()); // ERROR2 is not fully implemented in motor driver firmware. Ignore the value of this for now.
 
-  motor1.setSpeed(-5000000); // negative values reverse the direction of the motor.
+  motor1.setSpeed(-25000000); // negative values reverse the direction of the motor.
   delay(2000);
 
   motor1.updateQuickDataReadout();
